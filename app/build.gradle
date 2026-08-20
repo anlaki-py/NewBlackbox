@@ -3,6 +3,17 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
 }
 
+def releaseKeystorePath = providers.environmentVariable("RELEASE_KEYSTORE_PATH").orNull
+def releaseKeystorePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull
+def releaseKeyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").orNull
+def releaseKeyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull
+def releaseSigningConfigured = [
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+].every { it }
+
 android {
 
     namespace 'top.niunaijun.blackboxa'
@@ -28,9 +39,22 @@ android {
         }
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
