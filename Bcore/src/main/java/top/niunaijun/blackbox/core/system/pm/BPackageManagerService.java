@@ -752,7 +752,10 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
             result.packageName = aPackage.packageName;
 
             if (option.isFlag(InstallOption.FLAG_SYSTEM)) {
-                aPackage.applicationInfo = BlackBoxCore.getPackageManager().getPackageInfo(aPackage.packageName, 0).applicationInfo;
+                PackageInfo systemPackage = BlackBoxCore.getPackageManager().getPackageInfo(aPackage.packageName, 0);
+                aPackage.applicationInfo = systemPackage.applicationInfo;
+                String[] systemSplits = systemPackage.applicationInfo.splitSourceDirs;
+                aPackage.splitCodePaths = systemSplits == null ? null : systemSplits.clone();
             }
             BPackageSettings bPackageSettings = mSettings.getPackageLPw(aPackage.packageName, aPackage, option);
 
