@@ -5,6 +5,7 @@
     
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.CREDENTIAL_MANAGER_SET_ALLOWED_PROVIDERS" />
 
     
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
