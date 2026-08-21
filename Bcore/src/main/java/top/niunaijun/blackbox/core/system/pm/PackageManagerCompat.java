@@ -358,17 +358,21 @@ public class PackageManagerCompat {
 
     public static Resources getResources(Context context, ApplicationInfo appInfo) {
         BPackageSettings ps = BPackageManagerService.get().getBPackageSetting(appInfo.packageName);
-        if (ps != null) {
-            AssetManager assets = BRAssetManager.get()._new();
-            BRAssetManager.get(assets).addAssetPath(ps.pkg.baseCodePath);
-            if (ps.pkg.splitCodePaths != null) {
-                for (String splitCodePath : ps.pkg.splitCodePaths) {
+        String baseCodePath = ps == null ? appInfo.sourceDir : ps.pkg.baseCodePath;
+        String[] splitCodePaths = ps == null ? appInfo.splitSourceDirs : ps.pkg.splitCodePaths;
+        if (baseCodePath == null) {
+            return null;
+        }
+        AssetManager assets = BRAssetManager.get()._new();
+        BRAssetManager.get(assets).addAssetPath(baseCodePath);
+        if (splitCodePaths != null) {
+            for (String splitCodePath : splitCodePaths) {
+                if (splitCodePath != null) {
                     BRAssetManager.get(assets).addAssetPath(splitCodePath);
                 }
             }
-            Resources hostRes = context.getResources();
-            return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
         }
-        return null;
+        Resources hostRes = context.getResources();
+        return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
     }
 }

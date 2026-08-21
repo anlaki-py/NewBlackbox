@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.content.res.Resources;
 import android.os.Build;
 import android.util.Log;
 
@@ -25,6 +26,7 @@ import black.android.content.pm.BRPackageManager;
 import top.niunaijun.blackbox.BlackBoxCore;
 import top.niunaijun.blackbox.app.BActivityThread;
 import top.niunaijun.blackbox.core.env.AppSystemEnv;
+import top.niunaijun.blackbox.core.system.pm.PackageManagerCompat;
 import top.niunaijun.blackbox.fake.FakeCore;
 import top.niunaijun.blackbox.fake.hook.BinderInvocationStub;
 import top.niunaijun.blackbox.fake.hook.MethodHook;
@@ -91,7 +93,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         addMethodHook(new CheckSelfPermission());
         addMethodHook(new ShouldShowRequestPermissionRationale());
         addMethodHook(new RequestPermissions());
-        addMethodHook(new DisableIconLoading());
+        addMethodHook(new VirtualDrawableLoading());
         addMethodHook(new SetSplashScreenTheme());
         addMethodHook(new XiaomiSecurityBypass());
         addMethodHook(new VirtualPackageState("getApplicationEnabledSetting"));
@@ -612,12 +614,32 @@ public class IPackageManagerProxy extends BinderInvocationStub {
     }
 
     @ProxyMethod("getDrawable")
-    public static class DisableIconLoading extends MethodHook {
+    public static class VirtualDrawableLoading extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
-            
-            Slog.d(TAG, "Blocking icon loading to prevent resource errors");
-            return null; 
+            String packageName = MethodParameterUtils.getFirstParam(args, String.class);
+            Integer resourceId = MethodParameterUtils.getFirstParam(args, Integer.class);
+            if (packageName == null || resourceId == null || resourceId == 0
+                    || !BlackBoxCore.get().isInstalled(packageName, BActivityThread.getUserId())) {
+                return method.invoke(who, args);
+            }
+            ApplicationInfo applicationInfo = BlackBoxCore.getBPackageManager()
+                    .getApplicationInfo(packageName, 0, BActivityThread.getUserId());
+            if (applicationInfo == null) {
+                return null;
+            }
+            Resources resources = PackageManagerCompat.getResources(
+                    BlackBoxCore.getContext(), applicationInfo);
+            if (resources == null) {
+                return null;
+            }
+            try {
+                return resources.getDrawable(resourceId);
+            } catch (Resources.NotFoundException notFound) {
+                Slog.w(TAG, "Virtual drawable not found package=" + packageName
+                        + " resource=" + resourceId);
+                return null;
+            }
         }
     }
 

@@ -343,12 +343,12 @@ public final class VirtualRootRuntime {
             Log.i(TAG, "RootService already connected package=" + guestContext.getPackageName());
             return;
         }
-        loadGuestNativeLibrary();
         ComponentName component = ComponentName.unflattenFromString(flattenedComponent);
         if (component == null) {
             throw new IllegalArgumentException("Invalid RootService component");
         }
         ClassLoader classLoader = guestContext.getClassLoader();
+        loadGuestNativeLibrary(classLoader);
         Class<?> serviceClass = classLoader.loadClass(component.getClassName());
         Object service = serviceClass.getDeclaredConstructor().newInstance();
         Method attachBaseContext = findMethod(serviceClass, "attachBaseContext", Context.class);
@@ -371,15 +371,25 @@ public final class VirtualRootRuntime {
         throw new NoSuchMethodException(name);
     }
 
-    private void loadGuestNativeLibrary() {
+    private void loadGuestNativeLibrary(ClassLoader classLoader) {
         try {
             ApplicationInfo info = guestContext.getApplicationInfo();
             File library = new File(info.nativeLibraryDir, "libnativelib.so");
             if (library.isFile()) {
                 System.load(library.getAbsolutePath());
+                return;
             }
+            Method findLibrary = classLoader.getClass().getMethod("findLibrary", String.class);
+            String libraryPath = (String) findLibrary.invoke(classLoader, "nativelib");
+            if (libraryPath != null) {
+                System.load(libraryPath);
+                return;
+            }
+            Log.e(TAG, "DataBackup native helper was not found");
         } catch (UnsatisfiedLinkError alreadyLoadedOrUnavailable) {
             Log.w(TAG, "DataBackup native helper was not loaded", alreadyLoadedOrUnavailable);
+        } catch (ReflectiveOperationException reflectionFailure) {
+            Log.e(TAG, "Unable to resolve DataBackup native helper", reflectionFailure);
         }
     }
 
