@@ -33,6 +33,11 @@ jobs:
       - name: Install Android build dependencies
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;29.0.13846066"
 
+      - name: Run unit tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :Bcore:testDebugUnitTest
+
       - name: Decode release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}

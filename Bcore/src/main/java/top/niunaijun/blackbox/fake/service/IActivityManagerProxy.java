@@ -15,6 +15,7 @@ import android.os.IInterface;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -382,6 +383,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
                         flags &= ~Context.BIND_EXTERNAL_SERVICE;
                         args[flagsIndex] = flags;
                     }
+                    sanitizeProxyServiceInstanceName(method.getName(), args);
                 }
                 args[callingPackageIndex] = BlackBoxCore.getHostPkg();
 
@@ -391,9 +393,20 @@ public class IActivityManagerProxy extends ClassInvocationStub {
                 }
             }
             return method.invoke(who, args);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            throw cause == null ? e : cause;
         } catch (Exception e) {
             Slog.e(TAG, "BindServiceCommon: Unexpected error", e);
-            return method.invoke(who, args);
+            throw e;
+        }
+    }
+
+    static void sanitizeProxyServiceInstanceName(String methodName, Object[] args) {
+        if ("bindServiceInstance".equals(methodName) && args != null && args.length > 6) {
+            // The host proxy is not an Android isolated service. Passing through the guest's
+            // instance name makes ActivityManager reject the rewritten service on Android 10+.
+            args[6] = null;
         }
     }
 
