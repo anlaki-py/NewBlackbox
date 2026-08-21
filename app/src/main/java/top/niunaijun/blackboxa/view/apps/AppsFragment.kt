@@ -27,6 +27,7 @@ import top.niunaijun.blackboxa.util.inflate
 import top.niunaijun.blackboxa.util.MemoryManager
 import top.niunaijun.blackboxa.util.toast
 import top.niunaijun.blackboxa.view.base.LoadingActivity
+import top.niunaijun.blackboxa.view.logs.AppLogsActivity
 import top.niunaijun.blackboxa.view.main.MainActivity
 import java.util.*
 import kotlin.math.abs
@@ -340,6 +341,10 @@ class AppsFragment : Fragment() {
                         it.setOnMenuItemClickListener { item ->
                             try {
                                 when (item.itemId) {
+                                    R.id.app_logs -> {
+                                        AppLogsActivity.start(requireContext(), data.packageName, userID)
+                                    }
+
                                     R.id.app_remove -> {
                                         if (data.isXpModule) {
                                             toast(R.string.uninstall_module_toast)

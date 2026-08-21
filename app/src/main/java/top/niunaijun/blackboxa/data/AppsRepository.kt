@@ -12,6 +12,7 @@ import top.niunaijun.blackboxa.R
 import top.niunaijun.blackboxa.app.AppManager
 import top.niunaijun.blackboxa.bean.AppInfo
 import top.niunaijun.blackboxa.bean.InstalledAppBean
+import top.niunaijun.blackboxa.diagnostics.AppDiagnostics
 import top.niunaijun.blackboxa.util.MemoryManager
 import top.niunaijun.blackboxa.util.getString
 
@@ -426,10 +427,13 @@ class AppsRepository {
 
     fun launchApk(packageName: String, userId: Int, launchLiveData: MutableLiveData<Boolean>) {
         try {
+            AppDiagnostics.recordLaunchRequested(packageName, userId)
             val result = BlackBoxCore.get().launchApk(packageName, userId)
+            AppDiagnostics.recordLaunchResult(packageName, userId, result)
             launchLiveData.postValue(result)
         } catch (e: Exception) {
             Log.e(TAG, "Error launching APK: ${e.message}")
+            AppDiagnostics.recordLaunchResult(packageName, userId, false)
             launchLiveData.postValue(false)
         }
     }

@@ -11,6 +11,7 @@ import top.niunaijun.blackbox.app.configuration.ClientConfiguration
 import top.niunaijun.blackboxa.app.App
 import top.niunaijun.blackboxa.app.rocker.RockerManager
 import top.niunaijun.blackboxa.biz.cache.AppSharedPreferenceDelegate
+import top.niunaijun.blackboxa.diagnostics.AppDiagnostics
 
 
 class BlackBoxLoader {
@@ -131,11 +132,23 @@ class BlackBoxLoader {
                                         userId: Int
                                 ) {
                                     try {
+                                        if (packageName != null && context != null) {
+                                            AppDiagnostics.startSession(
+                                                context,
+                                                packageName,
+                                                processName,
+                                                userId
+                                            )
+                                            AppDiagnostics.recordLifecycle(
+                                                "beforeCreateApplication process=${processName.orEmpty()}"
+                                            )
+                                        }
                                         Log.d(
                                                 TAG,
                                                 "beforeCreateApplication: pkg $packageName, processName $processName,userID:${BActivityThread.getUserId()}"
                                         )
                                     } catch (e: Exception) {
+                                        AppDiagnostics.recordError("beforeCreateApplication callback", e)
                                         Log.e(TAG, "Error in beforeCreateApplication: ${e.message}")
                                     }
                                 }
@@ -147,11 +160,13 @@ class BlackBoxLoader {
                                         userId: Int
                                 ) {
                                     try {
+                                        AppDiagnostics.recordLifecycle("beforeApplicationOnCreate")
                                         Log.d(
                                                 TAG,
                                                 "beforeApplicationOnCreate: pkg $packageName, processName $processName"
                                         )
                                     } catch (e: Exception) {
+                                        AppDiagnostics.recordError("beforeApplicationOnCreate callback", e)
                                         Log.e(
                                                 TAG,
                                                 "Error in beforeApplicationOnCreate: ${e.message}"
@@ -166,15 +181,31 @@ class BlackBoxLoader {
                                         userId: Int
                                 ) {
                                     try {
+                                        AppDiagnostics.recordLifecycle("afterApplicationOnCreate")
                                         Log.d(
                                                 TAG,
                                                 "afterApplicationOnCreate: pkg $packageName, processName $processName"
                                         )
                                         RockerManager.init(application, userId)
                                     } catch (e: Exception) {
+                                        AppDiagnostics.recordError("afterApplicationOnCreate callback", e)
                                         Log.e(
                                                 TAG,
                                                 "Error in afterApplicationOnCreate: ${e.message}"
+                                        )
+                                    }
+                                }
+
+                                override fun onApplicationError(
+                                        packageName: String?,
+                                        processName: String?,
+                                        throwable: Throwable?,
+                                        userId: Int
+                                ) {
+                                    if (throwable != null) {
+                                        AppDiagnostics.recordError(
+                                            "virtual application startup package=${packageName.orEmpty()} process=${processName.orEmpty()}",
+                                            throwable
                                         )
                                     }
                                 }

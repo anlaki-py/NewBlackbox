@@ -24,6 +24,9 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="n">
         <activity
+            android:name=".view.logs.AppLogsActivity"
+            android:exported="false" />
+        <activity
             android:name=".view.fake.FollowMyLocationOverlay"
             android:exported="false" />
         <activity android:name=".view.setting.SettingActivity" />

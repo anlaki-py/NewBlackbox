@@ -50,6 +50,10 @@ public class AppLifecycleCallback implements Application.ActivityLifecycleCallba
 
     }
 
+    public void onApplicationError(String packageName, String processName, Throwable throwable, int userId) {
+
+    }
+
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
 

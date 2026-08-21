@@ -35,6 +35,11 @@
     <string name="app_clear_hint">Clear Data for %s?</string>
     <string name="app_remove">Uninstall App</string>
     <string name="app_shortcut">Create Shortcut</string>
+    <string name="view_logs">View Logs</string>
+    <string name="app_logs">App Logs</string>
+    <string name="copy_logs">Copy</string>
+    <string name="logs_copied">Logs copied</string>
+    <string name="log_privacy_notice">Logs can contain account, device, and app data. Review them before sharing.</string>
     <string name="shortcut_name">Shortcut Name</string>
     <string name="try_add_shortcut">Try Added To Desktop</string>
     <string name="add_shortcut_fail_msg">If the addition fails, please go to system settings and open the permission of "create desktop shortcut" for BlackBox</string>

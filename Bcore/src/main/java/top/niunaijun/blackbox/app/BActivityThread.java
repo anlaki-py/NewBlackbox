@@ -431,6 +431,7 @@ public class BActivityThread extends IBActivityThread.Stub {
             try {
                 application = BRLoadedApk.get(loadedApk).makeApplication(false, null);
             } catch (Exception makeAppException) {
+                onApplicationError(packageName, processName, makeAppException);
                 Slog.e(TAG, "Failed to makeApplication, trying fallback approach", makeAppException);
                 application = null;
             }
@@ -443,6 +444,7 @@ public class BActivityThread extends IBActivityThread.Stub {
                 try {
                     application = BRLoadedApk.get(loadedApk).makeApplication(true, null);
                 } catch (Exception e) {
+                    onApplicationError(packageName, processName, e);
                     Slog.e(TAG, "Fallback makeApplication also failed", e);
                 }
                 
@@ -457,6 +459,7 @@ public class BActivityThread extends IBActivityThread.Stub {
                             throw new RuntimeException("Unable to create application context");
                         }
                     } catch (Exception contextException) {
+                        onApplicationError(packageName, processName, contextException);
                         Slog.e(TAG, "Failed to create fallback application context", contextException);
                         throw new RuntimeException("Unable to makeApplication - all fallback attempts failed", contextException);
                     }
@@ -480,6 +483,7 @@ public class BActivityThread extends IBActivityThread.Stub {
 
             HookManager.get().checkEnv(HCallbackProxy.class);
         } catch (Exception e) {
+            onApplicationError(packageName, processName, e);
             Slog.e(TAG, "Critical error in handleBindApplication", e);
             throw new RuntimeException("Unable to makeApplication", e);
         }
@@ -1198,6 +1202,21 @@ public class BActivityThread extends IBActivityThread.Stub {
     private void onAfterApplicationOnCreate(String packageName, String processName, Application application) {
         for (AppLifecycleCallback appLifecycleCallback : BlackBoxCore.get().getAppLifecycleCallbacks()) {
             appLifecycleCallback.afterApplicationOnCreate(packageName, processName, application, BActivityThread.getUserId());
+        }
+    }
+
+    private void onApplicationError(String packageName, String processName, Throwable throwable) {
+        for (AppLifecycleCallback appLifecycleCallback : BlackBoxCore.get().getAppLifecycleCallbacks()) {
+            try {
+                appLifecycleCallback.onApplicationError(
+                        packageName,
+                        processName,
+                        throwable,
+                        BActivityThread.getUserId()
+                );
+            } catch (Throwable callbackError) {
+                Slog.e(TAG, "Error reporting virtual application failure", callbackError);
+            }
         }
     }
 
