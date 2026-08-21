@@ -82,7 +82,6 @@ public class ComponentResolver {
                     mProvidersByAuthority.remove(names[j]);
                 }
             }
-            mProvidersByAuthority.remove(p.info.authority);
         }
 
         componentSize = pkg.receivers.size();
@@ -120,15 +119,9 @@ public class ComponentResolver {
             mProviders.addProvider(p);
             if (p.info.authority != null) {
                 String[] names = p.info.authority.split(";");
-                p.info.authority = null;
                 for (String name : names) {
                     if (!mProvidersByAuthority.containsKey(name)) {
                         mProvidersByAuthority.put(name, p);
-                        if (p.info.authority == null) {
-                            p.info.authority = name;
-                        } else {
-                            p.info.authority = p.info.authority + ";" + name;
-                        }
                     } else {
                         final BPackage.Provider other =
                                 mProvidersByAuthority.get(name);
@@ -170,29 +163,58 @@ public class ComponentResolver {
     
     BPackage.Activity getActivity(ComponentName component) {
         synchronized (mLock) {
-            return mActivities.mActivities.get(component);
+            return mActivities.getComponent(component);
         }
     }
 
     
     BPackage.Provider getProvider(ComponentName component) {
         synchronized (mLock) {
-            return mProviders.mProviders.get(component);
+            return mProviders.getComponent(component);
         }
     }
 
     
     BPackage.Activity getReceiver(ComponentName component) {
         synchronized (mLock) {
-            return mReceivers.mActivities.get(component);
+            return mReceivers.getComponent(component);
         }
     }
 
     
     BPackage.Service getService(ComponentName component) {
         synchronized (mLock) {
-            return mServices.mServices.get(component);
+            return mServices.getComponent(component);
         }
+    }
+
+    static boolean componentMatches(ComponentName requested, String packageName, String className) {
+        return requested != null
+                && componentMatches(requested.getPackageName(), requested.getClassName(),
+                packageName, className);
+    }
+
+    static boolean componentMatches(String requestedPackage, String requestedClass,
+                                    String packageName, String className) {
+        return requestedPackage != null
+                && requestedClass != null
+                && requestedPackage.equals(packageName)
+                && requestedClass.equals(className);
+    }
+
+    private static <T extends BPackage.Component<?>> T findComponent(
+            ArrayMap<ComponentName, T> components, ComponentName requested) {
+        T component = components.get(requested);
+        if (component != null) {
+            return component;
+        }
+        for (int i = 0; i < components.size(); i++) {
+            T candidate = components.valueAt(i);
+            if (componentMatches(requested, candidate.owner.packageName, candidate.className)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     List<ResolveInfo> queryActivities(Intent intent, String resolvedType, int flags, int userId) {
@@ -344,6 +366,10 @@ public class ComponentResolver {
             }
         }
 
+        BPackage.Service getComponent(ComponentName component) {
+            return findComponent(mServices, component);
+        }
+
         void removeService(BPackage.Service s) {
             mServices.remove(s.getComponentName());
             final int intentsSize = s.intents.size();
@@ -449,6 +475,10 @@ public class ComponentResolver {
             }
         }
 
+        BPackage.Activity getComponent(ComponentName component) {
+            return findComponent(mActivities, component);
+        }
+
         private void removeActivity(BPackage.Activity a, String type) {
             mActivities.remove(a.getComponentName());
             final int intentsSize = a.intents.size();
@@ -550,6 +580,10 @@ public class ComponentResolver {
                 BPackage.ProviderIntentInfo intent = p.intents.get(j);
                 addFilter(intent);
             }
+        }
+
+        BPackage.Provider getComponent(ComponentName component) {
+            return findComponent(mProviders, component);
         }
 
         void removeProvider(BPackage.Provider p) {

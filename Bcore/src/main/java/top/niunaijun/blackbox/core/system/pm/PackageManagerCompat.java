@@ -245,8 +245,6 @@ public class PackageManagerCompat {
         }
         
         ProviderInfo pi = new ProviderInfo(p.info);
-        if (pi.authority == null)
-            return null;
         pi.metaData = p.metaData;
         pi.processName = BPackageManagerService.fixProcessName(pi.packageName, pi.processName);
         if ((flags & PackageManager.GET_URI_PERMISSION_PATTERNS) == 0) {

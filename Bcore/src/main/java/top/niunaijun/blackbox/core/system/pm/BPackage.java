@@ -236,6 +236,7 @@ public class BPackage implements Parcelable {
         public Activity(PackageParser.Activity activity) {
             super(activity);
             this.info = activity.info;
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (activity.intents != null) {
                 int size = activity.intents.size();
                 this.intents = new ArrayList<>(size);
@@ -248,6 +249,7 @@ public class BPackage implements Parcelable {
         public Activity(Parcel parcel) {
             super(parcel);
             this.info = parcel.readParcelable(ActivityInfo.class.getClassLoader());
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             this.intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -263,6 +265,7 @@ public class BPackage implements Parcelable {
         public Service(PackageParser.Service service) {
             super(service);
             info = service.info;
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (service.intents != null) {
                 int size = service.intents.size();
                 intents = new ArrayList<>(size);
@@ -275,6 +278,7 @@ public class BPackage implements Parcelable {
         public Service(Parcel parcel) {
             super(parcel);
             info = parcel.readParcelable(ServiceInfo.class.getClassLoader());
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -290,7 +294,7 @@ public class BPackage implements Parcelable {
         public Provider(PackageParser.Provider provider) {
             super(provider);
             info = provider.info;
-            syncClassNameFromInfo();
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (provider.intents != null) {
                 int size = provider.intents.size();
                 intents = new ArrayList<>(size);
@@ -303,7 +307,7 @@ public class BPackage implements Parcelable {
         public Provider(Parcel parcel) {
             super(parcel);
             info = parcel.readParcelable(ProviderInfo.class.getClassLoader());
-            syncClassNameFromInfo();
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -312,14 +316,6 @@ public class BPackage implements Parcelable {
             }
         }
 
-        private void syncClassNameFromInfo() {
-            // ProviderInfo.name is Android's authoritative component class. Keeping the
-            // resolver key aligned also repairs providers loaded from older saved packages.
-            if (info != null && info.name != null && !info.name.isEmpty()) {
-                className = info.name;
-                componentName = null;
-            }
-        }
     }
 
     public static final class Instrumentation extends Component<IntentInfo> {
@@ -328,6 +324,7 @@ public class BPackage implements Parcelable {
         public Instrumentation(PackageParser.Instrumentation instrumentation) {
             super(instrumentation);
             info = instrumentation.info;
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (instrumentation.intents != null) {
                 int size = instrumentation.intents.size();
                 this.intents = new ArrayList<>(size);
@@ -340,6 +337,7 @@ public class BPackage implements Parcelable {
         public Instrumentation(Parcel parcel) {
             super(parcel);
             this.info = parcel.readParcelable(InstrumentationInfo.class.getClassLoader());
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             this.intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -355,6 +353,7 @@ public class BPackage implements Parcelable {
         public Permission(PackageParser.Permission permission) {
             super(permission);
             this.info = permission.info;
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (permission.intents != null) {
                 int size = permission.intents.size();
                 this.intents = new ArrayList<>(size);
@@ -367,6 +366,7 @@ public class BPackage implements Parcelable {
         public Permission(Parcel parcel) {
             super(parcel);
             this.info = parcel.readParcelable(Permission.class.getClassLoader());
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             this.intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -382,6 +382,7 @@ public class BPackage implements Parcelable {
         public PermissionGroup(PackageParser.PermissionGroup group) {
             super(group);
             this.info = group.info;
+            syncClassNameFromInfo(info != null ? info.name : null);
             if (group.intents != null) {
                 int size = group.intents.size();
                 this.intents = new ArrayList<>(size);
@@ -394,6 +395,7 @@ public class BPackage implements Parcelable {
         public PermissionGroup(Parcel parcel) {
             super(parcel);
             this.info = parcel.readParcelable(PermissionGroup.class.getClassLoader());
+            syncClassNameFromInfo(info != null ? info.name : null);
             int N = parcel.readInt();
             this.intents = new ArrayList<>(N);
             while (N-- > 0) {
@@ -573,6 +575,20 @@ public class BPackage implements Parcelable {
                         className);
             }
             return componentName;
+        }
+
+        void syncClassNameFromInfo(String infoName) {
+            // ComponentInfo.name is Android's resolved class name. Reapplying it when
+            // loading saved packages also repairs resolver keys written by older builds.
+            String resolvedName = resolveClassName(className, infoName);
+            if (resolvedName != null && !resolvedName.equals(className)) {
+                className = resolvedName;
+                componentName = null;
+            }
+        }
+
+        static String resolveClassName(String parserName, String infoName) {
+            return infoName != null && !infoName.isEmpty() ? infoName : parserName;
         }
     }
 
