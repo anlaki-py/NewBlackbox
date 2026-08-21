@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.ComponentInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
@@ -40,6 +41,29 @@ import top.niunaijun.blackbox.utils.compat.ParceledListSliceCompat;
 
 public class IPackageManagerProxy extends BinderInvocationStub {
     public static final String TAG = "PackageManagerStub";
+
+    private static boolean isCurrentAppUid(int uid) {
+        return uid == BlackBoxCore.getHostUid() || uid == BActivityThread.getBUid();
+    }
+
+    private static String getCurrentPackageName() {
+        return BActivityThread.getAppPackageName();
+    }
+
+    private static void normalizeCurrentApplicationUid(ApplicationInfo applicationInfo) {
+        if (applicationInfo != null
+                && applicationInfo.packageName != null
+                && applicationInfo.packageName.equals(getCurrentPackageName())) {
+            applicationInfo.uid = BlackBoxCore.getHostUid();
+        }
+    }
+
+    private static <T extends ComponentInfo> T normalizeCurrentComponentUid(T componentInfo) {
+        if (componentInfo != null) {
+            normalizeCurrentApplicationUid(componentInfo.applicationInfo);
+        }
+        return componentInfo;
+    }
 
     public IPackageManagerProxy() {
         super(BRActivityThread.get().sPackageManager().asBinder());
@@ -190,6 +214,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             
             PackageInfo packageInfo = BlackBoxCore.getBPackageManager().getPackageInfo(packageName, flags, BlackBoxCore.getUserId());
             if (packageInfo != null) {
+                normalizeCurrentApplicationUid(packageInfo.applicationInfo);
                 
                 if (packageInfo.requestedPermissions != null && packageInfo.requestedPermissionsFlags != null) {
                     for (int i = 0; i < packageInfo.requestedPermissions.length; i++) {
@@ -232,7 +257,11 @@ public class IPackageManagerProxy extends BinderInvocationStub {
     public static class GetPackageUid extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
-            MethodParameterUtils.replaceFirstAppPkg(args);
+            String packageName = MethodParameterUtils.getFirstParam(args, String.class);
+            if (packageName != null && BlackBoxCore.get().isInstalled(
+                    packageName, BActivityThread.getUserId())) {
+                return BlackBoxCore.getHostUid();
+            }
             return method.invoke(who, args);
         }
     }
@@ -245,7 +274,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             int flags = MethodParameterUtils.toInt(args[1]);
             ProviderInfo providerInfo = BlackBoxCore.getBPackageManager().getProviderInfo(componentName, flags, BlackBoxCore.getUserId());
             if (providerInfo != null)
-                return providerInfo;
+                return normalizeCurrentComponentUid(providerInfo);
             if (AppSystemEnv.isOpenPackage(componentName)) {
                 return method.invoke(who, args);
             }
@@ -261,7 +290,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             int flags = MethodParameterUtils.toInt(args[1]);
             ActivityInfo receiverInfo = BlackBoxCore.getBPackageManager().getReceiverInfo(componentName, flags, BlackBoxCore.getUserId());
             if (receiverInfo != null)
-                return receiverInfo;
+                return normalizeCurrentComponentUid(receiverInfo);
             if (AppSystemEnv.isOpenPackage(componentName)) {
                 return method.invoke(who, args);
             }
@@ -277,7 +306,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             int flags = MethodParameterUtils.toInt(args[1]);
             ActivityInfo activityInfo = BlackBoxCore.getBPackageManager().getActivityInfo(componentName, flags, BlackBoxCore.getUserId());
             if (activityInfo != null)
-                return activityInfo;
+                return normalizeCurrentComponentUid(activityInfo);
             if (AppSystemEnv.isOpenPackage(componentName)) {
                 return method.invoke(who, args);
             }
@@ -294,7 +323,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             int flags = MethodParameterUtils.toInt(args[1]);
             ServiceInfo serviceInfo = BlackBoxCore.getBPackageManager().getServiceInfo(componentName, flags, BlackBoxCore.getUserId());
             if (serviceInfo != null)
-                return serviceInfo;
+                return normalizeCurrentComponentUid(serviceInfo);
             if (AppSystemEnv.isOpenPackage(componentName)) {
                 return method.invoke(who, args);
             }
@@ -336,6 +365,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
 
             ApplicationInfo applicationInfo = BlackBoxCore.getBPackageManager().getApplicationInfo(packageName, flags, BlackBoxCore.getUserId());
             if (applicationInfo != null) {
+                normalizeCurrentApplicationUid(applicationInfo);
                 return applicationInfo;
             }
             if (AppSystemEnv.isOpenPackage(packageName)) {
@@ -386,7 +416,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             if (providerInfo == null) {
                 return method.invoke(who, args);
             }
-            return providerInfo;
+            return normalizeCurrentComponentUid(providerInfo);
         }
     }
 
@@ -404,13 +434,43 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             int uid = (Integer) args[0];
-            if (uid == BlackBoxCore.getHostUid()) {
-                args[0] = BActivityThread.getBUid();
-                uid = (int) args[0];
+            if (isCurrentAppUid(uid)) {
+                String packageName = getCurrentPackageName();
+                return packageName == null ? new String[]{} : new String[]{packageName};
             }
             String[] packagesForUid = BlackBoxCore.getBPackageManager().getPackagesForUid(uid);
             Slog.d(TAG, args[0] + " , " + BActivityThread.getAppProcessName() + " GetPackagesForUid: " + Arrays.toString(packagesForUid));
             return packagesForUid;
+        }
+    }
+
+    @ProxyMethod("getNameForUid")
+    public static class GetNameForUid extends MethodHook {
+        @Override
+        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+            int uid = (Integer) args[0];
+            if (isCurrentAppUid(uid)) {
+                return getCurrentPackageName();
+            }
+            return method.invoke(who, args);
+        }
+    }
+
+    @ProxyMethod("getNamesForUids")
+    public static class GetNamesForUids extends MethodHook {
+        @Override
+        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+            int[] uids = (int[]) args[0];
+            String[] names = (String[]) method.invoke(who, args);
+            if (names == null || names.length != uids.length) {
+                names = new String[uids.length];
+            }
+            for (int i = 0; i < uids.length; i++) {
+                if (isCurrentAppUid(uids[i])) {
+                    names[i] = getCurrentPackageName();
+                }
+            }
+            return names;
         }
     }
 
