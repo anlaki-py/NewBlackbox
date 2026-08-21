@@ -2,6 +2,7 @@ package top.niunaijun.blackbox.root;
 
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
 import android.os.FileObserver;
 import android.os.Handler;
@@ -33,8 +34,6 @@ import top.niunaijun.blackbox.utils.FileUtils;
 /** Hosts libsu's regular RootService inside an approved BlackBox guest process. */
 public final class VirtualRootRuntime {
     private static final String TAG = "VirtualRoot";
-    private static final String ROOT_SERVER_CLASS =
-            "com.topjohnwu.superuser.internal.RootServiceServer";
     private static final int MAX_COMMAND_BYTES = 16 * 1024;
     private static final int MAX_INSTALL_SESSIONS = 8;
     private static final int MAX_APKS_PER_SESSION = 64;
@@ -50,7 +49,7 @@ public final class VirtualRootRuntime {
     private final AtomicInteger nextInstallSession = new AtomicInteger(1);
     private final Map<Integer, List<File>> installSessions = new ConcurrentHashMap<>();
     private FileObserver observer;
-    private Object rootServiceServer;
+    private Object rootService;
 
     private VirtualRootRuntime(Context guestContext, File commandFile, File responseFile) {
         this.guestContext = guestContext;
@@ -199,7 +198,7 @@ public final class VirtualRootRuntime {
                 Log.w(TAG, "Rejected unsupported RootService action=" + action);
                 return;
             }
-            startOrReconnectRootService(clientUid);
+            startRootService(flattenedComponent, clientUid);
         } catch (Throwable throwable) {
             Log.e(TAG, "RootService command failed", throwable);
         }
@@ -339,19 +338,37 @@ public final class VirtualRootRuntime {
         return tokens;
     }
 
-    private void startOrReconnectRootService(int clientUid) throws Exception {
-        loadGuestNativeLibrary();
-        ClassLoader classLoader = guestContext.getClassLoader();
-        Class<?> serverClass = classLoader.loadClass(ROOT_SERVER_CLASS);
-        if (rootServiceServer == null) {
-            Method getInstance = serverClass.getMethod("getInstance", Context.class);
-            rootServiceServer = getInstance.invoke(null,
-                    new RootServiceContext(guestContext, clientUid));
-        } else {
-            Method broadcast = serverClass.getMethod("broadcast", int.class);
-            broadcast.invoke(rootServiceServer, clientUid);
+    private void startRootService(String flattenedComponent, int clientUid) throws Exception {
+        if (rootService != null) {
+            Log.i(TAG, "RootService already connected package=" + guestContext.getPackageName());
+            return;
         }
-        Log.i(TAG, "RootService connected package=" + guestContext.getPackageName());
+        loadGuestNativeLibrary();
+        ComponentName component = ComponentName.unflattenFromString(flattenedComponent);
+        if (component == null) {
+            throw new IllegalArgumentException("Invalid RootService component");
+        }
+        ClassLoader classLoader = guestContext.getClassLoader();
+        Class<?> serviceClass = classLoader.loadClass(component.getClassName());
+        Object service = serviceClass.getDeclaredConstructor().newInstance();
+        Method attachBaseContext = findMethod(serviceClass, "attachBaseContext", Context.class);
+        attachBaseContext.setAccessible(true);
+        attachBaseContext.invoke(service, new RootServiceContext(guestContext, clientUid));
+        rootService = service;
+        Log.i(TAG, "RootService connected component=" + component.flattenToShortString());
+    }
+
+    private static Method findMethod(Class<?> type, String name, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        Class<?> current = type;
+        while (current != null) {
+            try {
+                return current.getDeclaredMethod(name, parameterTypes);
+            } catch (NoSuchMethodException ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        throw new NoSuchMethodException(name);
     }
 
     private void loadGuestNativeLibrary() {
