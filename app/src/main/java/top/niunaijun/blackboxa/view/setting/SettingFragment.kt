@@ -44,6 +44,12 @@ class SettingFragment : PreferenceFragmentCompat() {
             disableFlagSecurePreference
         }
 
+        invalidHideState {
+            val appDiagnosticsPreference: Preference = (findPreference("app_diagnostics_enabled")!!)
+            appDiagnosticsPreference.setDefaultValue(AppManager.mBlackBoxLoader.appDiagnosticsEnabled())
+            appDiagnosticsPreference
+        }
+
         initSendLogs()
     }
 
@@ -79,6 +85,9 @@ class SettingFragment : PreferenceFragmentCompat() {
                 }
                 "disable_flag_secure" -> {
                     AppManager.mBlackBoxLoader.invalidDisableFlagSecure(tmpHide)
+                }
+                "app_diagnostics_enabled" -> {
+                    AppManager.mBlackBoxLoader.invalidAppDiagnosticsEnabled(tmpHide)
                 }
             }
 

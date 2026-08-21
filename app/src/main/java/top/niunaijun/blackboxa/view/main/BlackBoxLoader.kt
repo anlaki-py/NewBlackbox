@@ -26,6 +26,8 @@ class BlackBoxLoader {
 
     private var mDisableFlagSecure by AppSharedPreferenceDelegate(App.getContext(), false)
 
+    private var mAppDiagnosticsEnabled by AppSharedPreferenceDelegate(App.getContext(), false)
+
     fun hideRoot(): Boolean {
         return try {
             mHideRoot
@@ -57,6 +59,23 @@ class BlackBoxLoader {
             this.mDisableFlagSecure = disable
         } catch (e: Exception) {
             Log.e(TAG, "Error setting disableFlagSecure: ${e.message}")
+        }
+    }
+
+    fun appDiagnosticsEnabled(): Boolean {
+        return try {
+            mAppDiagnosticsEnabled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting appDiagnosticsEnabled: ${e.message}")
+            false
+        }
+    }
+
+    fun invalidAppDiagnosticsEnabled(enabled: Boolean) {
+        try {
+            mAppDiagnosticsEnabled = enabled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting appDiagnosticsEnabled: ${e.message}")
         }
     }
 
@@ -298,6 +317,15 @@ class BlackBoxLoader {
                                         mDisableFlagSecure
                                     } catch (e: Exception) {
                                         Log.e(TAG, "Error checking disableFlagSecure: ${e.message}")
+                                        false
+                                    }
+                                }
+
+                                override fun isAppDiagnosticsEnabled(): Boolean {
+                                    return try {
+                                        mAppDiagnosticsEnabled
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error checking appDiagnosticsEnabled: ${e.message}")
                                         false
                                     }
                                 }

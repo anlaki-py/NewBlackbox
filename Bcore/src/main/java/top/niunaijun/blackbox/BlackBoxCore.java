@@ -1265,6 +1265,10 @@ public class BlackBoxCore extends ClientConfiguration {
         return mClientConfiguration.isDisableFlagSecure();
     }
 
+    public boolean isAppDiagnosticsEnabled() {
+        return mClientConfiguration.isAppDiagnosticsEnabled();
+    }
+
 
 
     @Override

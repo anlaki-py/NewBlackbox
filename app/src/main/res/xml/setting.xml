@@ -31,6 +31,12 @@
                 app:title="@string/disable_flag_secure"
                 app:summary="@string/disable_flag_secure_summary" />
 
+        <SwitchPreferenceCompat
+                app:key="app_diagnostics_enabled"
+                app:title="@string/app_diagnostics_enabled"
+                app:summary="@string/app_diagnostics_enabled_summary"
+                app:defaultValue="false" />
+
         <Preference
                 android:key="send_logs"
                 android:title="Send Logs"

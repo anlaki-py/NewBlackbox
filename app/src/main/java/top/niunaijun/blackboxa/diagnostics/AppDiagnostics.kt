@@ -30,17 +30,20 @@ object AppDiagnostics {
 
     @JvmStatic
     fun recordLaunchRequested(packageName: String, userId: Int) {
+        if (!isCollectionEnabled()) return
         appendLauncherEvent(packageName, userId, "Launch requested from BlackBox")
     }
 
     @JvmStatic
     fun recordLaunchResult(packageName: String, userId: Int, launched: Boolean) {
+        if (!isCollectionEnabled()) return
         val result = if (launched) "Launch request accepted" else "Launch request failed"
         appendLauncherEvent(packageName, userId, result)
     }
 
     @JvmStatic
     fun startSession(context: Context, packageName: String, processName: String?, userId: Int) {
+        if (!isCollectionEnabled()) return
         if (activeSession != null) return
 
         runCatching {
@@ -184,6 +187,10 @@ object AppDiagnostics {
 
     private fun diagnosticsDirectory(packageName: String, userId: Int): File {
         return File(BEnvironment.getVirtualRoot(), "diagnostics/$userId/${safeFileKey(packageName)}")
+    }
+
+    private fun isCollectionEnabled(): Boolean {
+        return runCatching { BlackBoxCore.get().isAppDiagnosticsEnabled }.getOrDefault(false)
     }
 
     private fun pruneOldSessions(directory: File) {
