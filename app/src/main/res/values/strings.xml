@@ -24,7 +24,7 @@
     <string name="hide_root">Hide Root</string>
     <string name="hide_xposed">Hide Xposed</string>
     <string name="userRemark">User Remark</string>
-    <string name="done">Done</string>
+    <string name="done">Continue</string>
     <string name="cancel">Cancel</string>
     <string name="permission_setting">Setting</string>
     <string name="no_reminders">No Reminders</string>

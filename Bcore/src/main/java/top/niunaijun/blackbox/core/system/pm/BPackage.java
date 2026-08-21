@@ -290,6 +290,7 @@ public class BPackage implements Parcelable {
         public Provider(PackageParser.Provider provider) {
             super(provider);
             info = provider.info;
+            syncClassNameFromInfo();
             if (provider.intents != null) {
                 int size = provider.intents.size();
                 intents = new ArrayList<>(size);
@@ -302,11 +303,21 @@ public class BPackage implements Parcelable {
         public Provider(Parcel parcel) {
             super(parcel);
             info = parcel.readParcelable(ProviderInfo.class.getClassLoader());
+            syncClassNameFromInfo();
             int N = parcel.readInt();
             intents = new ArrayList<>(N);
             while (N-- > 0) {
                 IntentInfo intentInfo = parcel.readParcelable(BPackage.class.getClassLoader());
                 intents.add(new ProviderIntentInfo(intentInfo));
+            }
+        }
+
+        private void syncClassNameFromInfo() {
+            // ProviderInfo.name is Android's authoritative component class. Keeping the
+            // resolver key aligned also repairs providers loaded from older saved packages.
+            if (info != null && info.name != null && !info.name.isEmpty()) {
+                className = info.name;
+                componentName = null;
             }
         }
     }
