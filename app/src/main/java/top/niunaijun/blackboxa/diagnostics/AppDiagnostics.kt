@@ -106,6 +106,17 @@ object AppDiagnostics {
         return result.toString()
     }
 
+    @JvmStatic
+    fun clearLogs(packageName: String, userId: Int): Boolean {
+        return clearLogDirectory(diagnosticsDirectory(packageName, userId))
+    }
+
+    internal fun clearLogDirectory(directory: File): Boolean {
+        if (!directory.exists()) return true
+        val entries = directory.listFiles() ?: return false
+        return entries.fold(true) { allDeleted, entry -> entry.deleteRecursively() && allDeleted }
+    }
+
     internal fun safeFileKey(value: String): String {
         val sanitized = value.map { character ->
             if (character.isLetterOrDigit() || character == '.' || character == '_' || character == '-') {

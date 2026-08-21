@@ -36,6 +36,10 @@
     <string name="app_remove">Uninstall App</string>
     <string name="app_shortcut">Create Shortcut</string>
     <string name="view_logs">View Logs</string>
+    <string name="clear_logs">Clear Logs</string>
+    <string name="clear_logs_hint">Clear all logs for %s?</string>
+    <string name="logs_cleared">Logs cleared</string>
+    <string name="logs_clear_failed">Could not clear logs</string>
     <string name="app_logs">App Logs</string>
     <string name="copy_logs">Copy</string>
     <string name="save_logs">Save to File</string>

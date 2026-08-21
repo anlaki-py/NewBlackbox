@@ -21,6 +21,7 @@ import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackboxa.R
 import top.niunaijun.blackboxa.bean.AppInfo
 import top.niunaijun.blackboxa.databinding.FragmentAppsBinding
+import top.niunaijun.blackboxa.diagnostics.AppDiagnostics
 import top.niunaijun.blackboxa.util.InjectionUtil
 import top.niunaijun.blackboxa.util.ShortcutUtil
 import top.niunaijun.blackboxa.util.inflate
@@ -345,6 +346,10 @@ class AppsFragment : Fragment() {
                                         AppLogsActivity.start(requireContext(), data.packageName, userID)
                                     }
 
+                                    R.id.app_clear_logs -> {
+                                        clearAppLogs(data)
+                                    }
+
                                     R.id.app_remove -> {
                                         if (data.isXpModule) {
                                             toast(R.string.uninstall_module_toast)
@@ -512,6 +517,27 @@ class AppsFragment : Fragment() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error showing clear dialog: ${e.message}")
+        }
+    }
+
+    private fun clearAppLogs(info: AppInfo) {
+        try {
+            MaterialDialog(requireContext()).show {
+                title(R.string.clear_logs)
+                message(text = getString(R.string.clear_logs_hint, info.name))
+                positiveButton(R.string.done) {
+                    val message = if (AppDiagnostics.clearLogs(info.packageName, userID)) {
+                        R.string.logs_cleared
+                    } else {
+                        R.string.logs_clear_failed
+                    }
+                    toast(message)
+                }
+                negativeButton(R.string.cancel)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clearing app logs for ${info.packageName}", e)
+            toast(R.string.logs_clear_failed)
         }
     }
 
