@@ -189,26 +189,18 @@ public class PackageManagerCompat {
                 }
             }
         }
-        PackageInfo base = null;
-        try {
-            base = BlackBoxCore.getContext().getPackageManager().getPackageInfo(p.packageName, flags);
-        } catch (PackageManager.NameNotFoundException ignored) {
-        }
         if ((flags & PackageManager.GET_SIGNATURES) != 0) {
-            if (base == null) {
-                pi.signatures = p.mSignatures;
-            } else {
-                pi.signatures = base.signatures;
-            }
+            // A virtual package may share its name with a different package installed on
+            // the phone. Always report the certificate parsed from the virtual APK.
+            pi.signatures = p.mSignatures;
         }
         if (BuildCompat.isPie()) {
             if ((flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0) {
-                if (base == null) {
+                if (p.mSigningDetails != null) {
                     PackageParser.SigningDetails signingDetails = PackageParser.SigningDetails.UNKNOWN;
-                    BRPackageParserSigningDetails.get(signingDetails)._set_signatures(p.mSigningDetails.signatures);
+                    BRPackageParserSigningDetails.get(signingDetails)._set_signatures(
+                            p.mSigningDetails.signatures);
                     pi.signingInfo = BRSigningInfo.get()._new(signingDetails);
-                } else {
-                    pi.signingInfo = base.signingInfo;
                 }
             }
         }

@@ -1,8 +1,10 @@
 package top.niunaijun.blackboxa.view.setting
 
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackboxa.R
 import top.niunaijun.blackboxa.app.AppManager
@@ -50,7 +52,34 @@ class SettingFragment : PreferenceFragmentCompat() {
             appDiagnosticsPreference
         }
 
+        initVirtualRoot()
+
         initSendLogs()
+    }
+
+    private fun initVirtualRoot() {
+        val preference: SwitchPreferenceCompat = findPreference("virtual_root_enabled")!!
+        preference.isChecked = AppManager.mBlackBoxLoader.virtualRootEnabled()
+        preference.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue == true
+            if (!enabled) {
+                AppManager.mBlackBoxLoader.setVirtualRootEnabled(false)
+                toast(R.string.restart_module)
+                return@setOnPreferenceChangeListener true
+            }
+
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.virtual_root_warning_title)
+                .setMessage(R.string.virtual_root_warning_message)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.virtual_root_enable_action) { _, _ ->
+                    AppManager.mBlackBoxLoader.setVirtualRootEnabled(true)
+                    preference.isChecked = true
+                    toast(R.string.restart_module)
+                }
+                .show()
+            false
+        }
     }
 
     private fun initGms() {

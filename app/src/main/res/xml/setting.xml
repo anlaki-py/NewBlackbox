@@ -37,6 +37,13 @@
                 app:summary="@string/app_diagnostics_enabled_summary"
                 app:defaultValue="false" />
 
+        <SwitchPreferenceCompat
+                app:key="virtual_root_enabled"
+                app:title="@string/virtual_root"
+                app:summary="@string/virtual_root_summary"
+                app:defaultValue="false"
+                app:persistent="false" />
+
         <Preference
                 android:key="send_logs"
                 android:title="Send Logs"

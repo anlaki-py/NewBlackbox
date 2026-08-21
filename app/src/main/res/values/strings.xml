@@ -76,6 +76,11 @@
     <string name="disable_flag_secure_summary">Allow screenshots and screen recording in apps</string>
     <string name="app_diagnostics_enabled">Collect App Logs</string>
     <string name="app_diagnostics_enabled_summary">Save detailed launch, error, and crash logs for virtual apps</string>
+    <string name="virtual_root">Virtual root for DataBackup</string>
+    <string name="virtual_root_summary">Allow an approved DataBackup build to access apps stored inside BlackBox</string>
+    <string name="virtual_root_warning_title">Enable virtual root?</string>
+    <string name="virtual_root_warning_message">DataBackup will be able to read, copy, replace, and delete data belonging to every app inside BlackBox. It will not receive root access to your phone. Only builds signed by the official DataBackup certificate are accepted.</string>
+    <string name="virtual_root_enable_action">Enable</string>
     <string name="gms_manager">GMS Manager</string>
     <string name="jump_gms">Go to Gms Manager</string>
     <string name="enable_gms">Enable Service</string>

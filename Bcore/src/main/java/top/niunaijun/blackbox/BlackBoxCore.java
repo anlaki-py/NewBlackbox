@@ -56,6 +56,8 @@ import top.niunaijun.blackbox.fake.frameworks.BUserManager;
 
 import top.niunaijun.blackbox.fake.hook.HookManager;
 import top.niunaijun.blackbox.proxy.ProxyManifest;
+import top.niunaijun.blackbox.root.VirtualRootGrant;
+import top.niunaijun.blackbox.root.VirtualRootPolicy;
 import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.ShellUtils;
 import top.niunaijun.blackbox.utils.Slog;
@@ -1267,6 +1269,15 @@ public class BlackBoxCore extends ClientConfiguration {
 
     public boolean isAppDiagnosticsEnabled() {
         return mClientConfiguration.isAppDiagnosticsEnabled();
+    }
+
+    @Override
+    public boolean isVirtualRootEnabled() {
+        return mClientConfiguration.isVirtualRootEnabled();
+    }
+
+    public VirtualRootGrant getVirtualRootGrant(String packageName, int userId) {
+        return VirtualRootPolicy.evaluateInstalledPackage(packageName, userId, isVirtualRootEnabled());
     }
 
 

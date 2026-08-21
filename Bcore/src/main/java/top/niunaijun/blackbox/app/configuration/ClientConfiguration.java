@@ -34,6 +34,10 @@ public abstract class ClientConfiguration {
         return false;
     }
 
+    public boolean isVirtualRootEnabled() {
+        return false;
+    }
+
     
     public boolean requestInstallPackage(File file, int userId) {
         return false;

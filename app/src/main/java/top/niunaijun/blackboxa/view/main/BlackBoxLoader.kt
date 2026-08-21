@@ -28,6 +28,8 @@ class BlackBoxLoader {
 
     private var mAppDiagnosticsEnabled by AppSharedPreferenceDelegate(App.getContext(), false)
 
+    private var mVirtualRootEnabled by AppSharedPreferenceDelegate(App.getContext(), false)
+
     fun hideRoot(): Boolean {
         return try {
             mHideRoot
@@ -76,6 +78,23 @@ class BlackBoxLoader {
             mAppDiagnosticsEnabled = enabled
         } catch (e: Exception) {
             Log.e(TAG, "Error setting appDiagnosticsEnabled: ${e.message}")
+        }
+    }
+
+    fun virtualRootEnabled(): Boolean {
+        return try {
+            mVirtualRootEnabled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting virtualRootEnabled: ${e.message}")
+            false
+        }
+    }
+
+    fun setVirtualRootEnabled(enabled: Boolean) {
+        try {
+            mVirtualRootEnabled = enabled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting virtualRootEnabled: ${e.message}")
         }
     }
 
@@ -326,6 +345,15 @@ class BlackBoxLoader {
                                         mAppDiagnosticsEnabled
                                     } catch (e: Exception) {
                                         Log.e(TAG, "Error checking appDiagnosticsEnabled: ${e.message}")
+                                        false
+                                    }
+                                }
+
+                                override fun isVirtualRootEnabled(): Boolean {
+                                    return try {
+                                        mVirtualRootEnabled
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error checking virtualRootEnabled: ${e.message}")
                                         false
                                     }
                                 }
