@@ -45,6 +45,7 @@ public class BPackage implements Parcelable {
     public ApplicationInfo applicationInfo;
     public String mVersionName;
     public String baseCodePath;
+    public String[] splitCodePaths;
 
     public int mSharedUserLabel;
     
@@ -134,6 +135,7 @@ public class BPackage implements Parcelable {
         this.applicationInfo = aPackage.applicationInfo;
         this.mVersionName = aPackage.mVersionName;
         this.baseCodePath = aPackage.baseCodePath;
+        this.splitCodePaths = aPackage.splitCodePaths;
         this.mSharedUserLabel = aPackage.mSharedUserLabel;
         this.configPreferences = aPackage.configPreferences;
         this.reqFeatures = aPackage.reqFeatures;
@@ -228,6 +230,7 @@ public class BPackage implements Parcelable {
         this.configPreferences = in.createTypedArrayList(ConfigurationInfo.CREATOR);
         this.reqFeatures = in.createTypedArrayList(FeatureInfo.CREATOR);
         this.installOption = in.readParcelable(InstallOption.class.getClassLoader());
+        this.splitCodePaths = in.dataAvail() > 0 ? in.createStringArray() : null;
     }
 
     public final static class Activity extends Component<ActivityIntentInfo> {
@@ -745,6 +748,7 @@ public class BPackage implements Parcelable {
         dest.writeTypedList(this.configPreferences);
         dest.writeTypedList(this.reqFeatures);
         dest.writeParcelable(this.installOption, flags);
+        dest.writeStringArray(this.splitCodePaths);
     }
 
     public static final Parcelable.Creator<BPackage> CREATOR = new Parcelable.Creator<BPackage>() {

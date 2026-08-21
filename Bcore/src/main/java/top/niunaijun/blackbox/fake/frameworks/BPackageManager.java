@@ -522,6 +522,15 @@ public class BPackageManager extends BlackManager<IBPackageManagerService> {
         return null;
     }
 
+    public boolean attachSplitApks(String packageName, List<String> splitApks) {
+        try {
+            return getService().attachSplitApks(packageName, splitApks);
+        } catch (RemoteException e) {
+            crash(e);
+            return false;
+        }
+    }
+
     public List<ApplicationInfo> getInstalledApplications(int flags, int userId) {
         try {
             return getService().getInstalledApplications(flags, userId);
@@ -832,4 +841,3 @@ public class BPackageManager extends BlackManager<IBPackageManagerService> {
         return info;
     }
 }
-

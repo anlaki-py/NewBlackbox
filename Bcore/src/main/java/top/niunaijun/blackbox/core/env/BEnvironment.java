@@ -92,6 +92,18 @@ public class BEnvironment {
         return new File(getExternalUserDir(userId), String.format(Locale.CHINA, "Android/data/%s", packageName));
     }
 
+    public static File getExternalMediaDir(String packageName, int userId) {
+        return new File(getExternalUserDir(userId), String.format(Locale.CHINA, "Android/media/%s", packageName));
+    }
+
+    public static File getDeUserDir(int userId) {
+        return new File(sVirtualRoot, String.format(Locale.CHINA, "data/user_de/%d", userId));
+    }
+
+    public static File getVirtualRootRuntimeDir() {
+        return new File(getCacheDir(), "virtual-root");
+    }
+
 
     public static File getDataDir(String packageName, int userId) {
         return new File(sVirtualRoot, String.format(Locale.CHINA, "data/user/%d/%s", userId, packageName));

@@ -86,6 +86,56 @@ public class IPackageManagerProxy extends BinderInvocationStub {
         addMethodHook(new DisableIconLoading());
         addMethodHook(new SetSplashScreenTheme());
         addMethodHook(new XiaomiSecurityBypass());
+        addMethodHook(new VirtualPackageState("getApplicationEnabledSetting"));
+        addMethodHook(new VirtualPackageState("setApplicationEnabledSetting"));
+        addMethodHook(new VirtualPackageState("grantRuntimePermission"));
+        addMethodHook(new VirtualPackageState("revokeRuntimePermission"));
+        addMethodHook(new VirtualPackageState("getPermissionFlags"));
+        addMethodHook(new VirtualPackageState("updatePermissionFlags"));
+    }
+
+    public static class VirtualPackageState extends MethodHook {
+        private final String methodName;
+
+        VirtualPackageState(String methodName) {
+            this.methodName = methodName;
+        }
+
+        @Override
+        public String getMethodName() {
+            return methodName;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return true;
+        }
+
+        @Override
+        protected Object hook(Object who, Method method, Object[] args) {
+            String packageName = MethodParameterUtils.getFirstParam(args, String.class);
+            if (packageName == null || !BlackBoxCore.get().isInstalled(
+                    packageName, BActivityThread.getUserId())) {
+                return safeValue(method.getReturnType());
+            }
+            if ("getApplicationEnabledSetting".equals(method.getName())) {
+                return PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
+            }
+            if ("getPermissionFlags".equals(method.getName())) {
+                return 0;
+            }
+            return safeValue(method.getReturnType());
+        }
+
+        private Object safeValue(Class<?> returnType) {
+            if (returnType == boolean.class) {
+                return false;
+            }
+            if (returnType == int.class) {
+                return 0;
+            }
+            return null;
+        }
     }
 
     @ProxyMethod("resolveIntent")

@@ -57,7 +57,10 @@ public class IUserManagerProxy extends BinderInvocationStub {
     public static class getUsers extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
-            return new ArrayList<>();
+            ArrayList<Object> users = new ArrayList<>();
+            users.add(BRUserInfo.get()._new(
+                    BActivityThread.getUserId(), "BlackBox", BRUserInfo.get().FLAG_PRIMARY()));
+            return users;
         }
     }
 }

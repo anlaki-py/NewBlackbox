@@ -18,6 +18,17 @@ This enhanced edition includes bug fixes, stability improvements, and Android 14
 *   **Multi-Architecture**: Support for 32-bit and 64-bit apps.
 *   **Device Spoofing**: Modify device information for virtual apps.
 *   **Fake Location**: Spoof GPS coordinates.
+*   **DataBackup Virtual Root**: Allows the approved DataBackup app to back up and restore apps installed inside BlackBox without rooting the phone.
+
+## DataBackup virtual root
+
+Install the official `com.xayah.databackup.foss`, `com.xayah.databackup`, or `com.xayah.databackup.premium` build inside BlackBox. Open BlackBox settings and enable "Virtual root for DataBackup", then restart DataBackup.
+
+The grant applies only to apps and files managed by BlackBox. DataBackup can read and replace virtual APKs, private app data, device-protected data, external app data, OBB files, and app media. Base and split APK restore uses the BlackBox package manager rather than Android's real package installer.
+
+BlackBox rejects unsigned builds, builds signed by another certificate, other callers, real device paths, mount and namespace operations, kernel paths, and daemon RootService mode. Hardware-backed Android Keystore keys cannot be backed up. A restored login may also fail when an app binds its session to device hardware.
+
+If a restore is interrupted, stop DataBackup, reopen BlackBox, and retry the affected package. Temporary install sessions live in BlackBox cache and disappear with the DataBackup virtual process.
 
 ## Requirements
 

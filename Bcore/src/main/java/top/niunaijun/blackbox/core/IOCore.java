@@ -157,6 +157,15 @@ public class IOCore {
         NativeCore.enableIO();
     }
 
+    public void enableVirtualRootRedirects(int virtualUserId) {
+        int hostUserId = BlackBoxCore.getHostUserId();
+        addRedirect("/data/user/" + hostUserId, BEnvironment.getUserDir(virtualUserId).getAbsolutePath());
+        addRedirect("/data/data", BEnvironment.getUserDir(virtualUserId).getAbsolutePath());
+        addRedirect("/data/user_de/" + hostUserId, BEnvironment.getDeUserDir(virtualUserId).getAbsolutePath());
+        addRedirect("/data/app", BEnvironment.getAppRootDir().getAbsolutePath());
+        addRedirect("/data/media/" + hostUserId, BEnvironment.getExternalUserDir(virtualUserId).getAbsolutePath());
+    }
+
     private void hideRoot(Map<String, String> rule) {
         rule.put("/system/app/Superuser.apk", "/system/app/Superuser.apk-fake");
         rule.put("/sbin/su", "/sbin/su-fake");

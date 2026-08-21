@@ -100,6 +100,25 @@ public class IActivityManagerProxy extends ClassInvocationStub {
         addMethodHook(new PkgMethodProxy("getAppStartMode"));
         addMethodHook(new PkgMethodProxy("setAppLockedVerifying"));
         addMethodHook(new PkgMethodProxy("reportJunkFromApp"));
+        addMethodHook(new ForceStopVirtualPackage());
+    }
+
+    public static class ForceStopVirtualPackage extends MethodHook {
+        @Override
+        public String getMethodName() {
+            return "forceStopPackage";
+        }
+
+        @Override
+        protected Object hook(Object who, Method method, Object[] args) {
+            String packageName = MethodParameterUtils.getFirstParam(args, String.class);
+            if (packageName != null && BlackBoxCore.get().isInstalled(
+                    packageName, BActivityThread.getUserId())) {
+                BlackBoxCore.get().stopPackage(packageName, BActivityThread.getUserId());
+                return null;
+            }
+            return null;
+        }
     }
 
     @Override

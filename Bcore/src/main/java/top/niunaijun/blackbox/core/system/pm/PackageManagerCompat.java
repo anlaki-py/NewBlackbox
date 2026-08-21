@@ -294,6 +294,8 @@ public class PackageManagerCompat {
         ai.processName = BPackageManagerService.fixProcessName(p.packageName, ai.packageName);
         ai.publicSourceDir = sourceDir;
         ai.sourceDir = sourceDir;
+        ai.splitSourceDirs = p.splitCodePaths;
+        ai.splitPublicSourceDirs = p.splitCodePaths;
         ai.uid = p.mExtras.appId;
 
 
@@ -359,6 +361,11 @@ public class PackageManagerCompat {
         if (ps != null) {
             AssetManager assets = BRAssetManager.get()._new();
             BRAssetManager.get(assets).addAssetPath(ps.pkg.baseCodePath);
+            if (ps.pkg.splitCodePaths != null) {
+                for (String splitCodePath : ps.pkg.splitCodePaths) {
+                    BRAssetManager.get(assets).addAssetPath(splitCodePath);
+                }
+            }
             Resources hostRes = context.getResources();
             return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
         }

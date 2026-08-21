@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +41,10 @@ import top.niunaijun.blackbox.core.system.user.BUserManagerService;
 import top.niunaijun.blackbox.entity.pm.InstallOption;
 import top.niunaijun.blackbox.entity.pm.InstallResult;
 import top.niunaijun.blackbox.entity.pm.InstalledPackage;
+import top.niunaijun.blackbox.root.VirtualRootPolicy;
 import top.niunaijun.blackbox.utils.AbiUtils;
 import top.niunaijun.blackbox.utils.FileUtils;
+import top.niunaijun.blackbox.utils.NativeUtils;
 import top.niunaijun.blackbox.utils.Slog;
 import top.niunaijun.blackbox.utils.compat.PackageParserCompat;
 
@@ -517,6 +520,60 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
         synchronized (mInstallLock) {
             return installPackageAsUserLocked(file, option, userId);
         }
+    }
+
+    @Override
+    public boolean attachSplitApks(String packageName, List<String> splitApks) {
+        synchronized (mInstallLock) {
+            ProcessRecord caller = BProcessManagerService.get().findProcessByPid(getCallingPid());
+            if (caller == null || !VirtualRootPolicy.evaluateInstalledPackage(
+                    caller.getPackageName(), caller.userId,
+                    BlackBoxCore.get().isVirtualRootEnabled()).isApproved()) {
+                Slog.w(TAG, "Rejected split attachment from unauthorized caller");
+                return false;
+            }
+            BPackageSettings settings = mPackages.get(packageName);
+            if (settings == null || splitApks == null || splitApks.isEmpty()) {
+                return false;
+            }
+            ArrayList<String> installedSplits = new ArrayList<>();
+            try {
+                PackageInfo baseInfo = getPackageInfo(packageName,
+                        PackageManager.GET_SIGNATURES, settings.getUserIds().get(0));
+                for (String splitPath : splitApks) {
+                    File source = new File(splitPath).getCanonicalFile();
+                    if (!isInsideVirtualStorage(source)) {
+                        return false;
+                    }
+                    PackageInfo splitInfo = BlackBoxCore.getPackageManager().getPackageArchiveInfo(
+                            source.getAbsolutePath(), PackageManager.GET_SIGNATURES);
+                    if (splitInfo == null || !packageName.equals(splitInfo.packageName)
+                            || !Arrays.equals(baseInfo.signatures, splitInfo.signatures)) {
+                        return false;
+                    }
+                    String safeName = source.getName().replaceAll("[^A-Za-z0-9._-]", "_");
+                    File target = new File(BEnvironment.getAppDir(packageName), safeName);
+                    FileUtils.copyFile(source, target);
+                    target.setReadOnly();
+                    installedSplits.add(target.getAbsolutePath());
+                    NativeUtils.copyNativeLib(target, BEnvironment.getAppLibDir(packageName));
+                }
+                settings.pkg.splitCodePaths = installedSplits.toArray(new String[0]);
+                settings.save();
+                return true;
+            } catch (Throwable throwable) {
+                Slog.e(TAG, "Unable to attach split APKs for " + packageName, throwable);
+                return false;
+            }
+        }
+    }
+
+    private boolean isInsideVirtualStorage(File file) throws Exception {
+        String path = file.getCanonicalPath();
+        String internal = BEnvironment.getVirtualRoot().getCanonicalPath();
+        String external = BEnvironment.getExternalVirtualRoot().getCanonicalPath();
+        return path.startsWith(internal + File.separator)
+                || path.startsWith(external + File.separator);
     }
 
     @Override

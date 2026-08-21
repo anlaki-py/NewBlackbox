@@ -70,6 +70,7 @@ import top.niunaijun.blackbox.core.env.VirtualRuntime;
 import top.niunaijun.blackbox.core.system.user.BUserHandle;
 import top.niunaijun.blackbox.entity.AppConfig;
 import top.niunaijun.blackbox.entity.am.ReceiverData;
+import top.niunaijun.blackbox.root.VirtualRootRuntime;
 
 import top.niunaijun.blackbox.fake.delegate.AppInstrumentation;
 import top.niunaijun.blackbox.fake.delegate.ContentProviderDelegate;
@@ -402,6 +403,7 @@ public class BActivityThread extends IBActivityThread.Stub {
         NativeCore.init(Build.VERSION.SDK_INT);
         assert packageContext != null;
         IOCore.get().enableRedirect(packageContext);
+        VirtualRootRuntime.initialize(packageContext);
 
         AppBindData bindData = new AppBindData();
         bindData.appInfo = applicationInfo;
